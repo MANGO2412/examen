@@ -1,8 +1,11 @@
+import { useAuth } from "../auth/UseAuth";
+import { Link } from "react-router-dom";
+import {useState} from 'react';
 
-import Link from 'next/link';
-
+const {logout}=useAuth();
 const Nav = () => {
   return (
+    
     <nav className="navbar navbar-expand-lg navbar-light bg-light shadow-sm mb-4">
       <div className="container">
         <Link href="/">
@@ -27,7 +30,7 @@ const Nav = () => {
           <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
             <li className="nav-item">
               <Link href="/logout">
-                <a className="btn btn-danger" role="button">Cerrar sesión</a>
+                <a className="btn btn-danger" onClick={logout} role="button">Cerrar sesión</a>
               </Link>
             </li>
           </ul>

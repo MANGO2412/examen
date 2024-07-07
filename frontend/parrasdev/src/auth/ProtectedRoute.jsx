@@ -1,6 +1,6 @@
 import { Navigate,Link,useOutlet } from "react-router-dom";
 import {useAuth} from './UseAuth';
-// import Nav from "./pages/Nav";
+//import Nav from "../pages/Nav";
 
 export function  ProtectedRoute(){
     const {user,logout}=useAuth()

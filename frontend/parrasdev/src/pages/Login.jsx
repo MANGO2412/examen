@@ -1,52 +1,64 @@
 import React, { useState } from 'react';
-import { Form, Button, Container, Row, Col } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { useAuth } from '../auth/UseAuth';
 
-const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  
-  const handleSubmit = (e) => {
+const LoginPage = () => {
+  const loginPageStyles = {
+    body: {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '200%',
+      backgroundColor: '#f8f9fa',
+    },
+    loginContainer: {
+      backgroundColor: '#ffffff',
+      padding: '20px',
+      borderRadius: '8px',
+      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+      width: '700px' // Ajustar el ancho al tamaño deseado
+    },
+    formControl: {
+      borderRadius: '0.25rem',
+    },
+    btn: {
+      borderRadius: '0.25rem',
+    },
+    h3: {
+      marginBottom: '20px',
+    },
+  };
 
-    e.preventDefault();
-    console.log('Email:', email);
-    console.log('Password:', password);
+  const { login } = useAuth();
+  const [logUser, setLogUser] = useState({});
+
+  const handleLogInput = (e) => {
+    const { name, value } = e.target;
+    setLogUser({
+      ...logUser,
+      [name]: value.trim(),
+    });
   };
 
   return (
-    <Container>
-      <Row className="justify-content-md-center">
-        <Col md={6}>
-          <h2 className="text-center">Login</h2>
-          <Form onSubmit={handleSubmit}>
-            <Form.Group controlId="formBasicEmail">
-              <Form.Label>Email address</Form.Label>
-              <Form.Control
-                type="email"
-                placeholder="Enter email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </Form.Group>
-
-            <Form.Group controlId="formBasicPassword">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </Form.Group>
-
-            <Button variant="primary" type="submit" block>
-              Submit
-            </Button>
-          </Form>
-        </Col>
-      </Row>
-    </Container>
+    <div style={loginPageStyles.body}>
+      <div className="login-container" style={loginPageStyles.loginContainer}>
+        <h3 style={loginPageStyles.h3} className="text-center">Inicio de Sesión</h3>
+        <form>
+          <div className="mb-3">
+            <label htmlFor="email" className="form-label">Correo Electrónico</label>
+            <input type="email" className="form-control" id="email" name="email" placeholder="Ingresa tu correo electrónico" onChange={handleLogInput} required />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="password" className="form-label">Contraseña</label>
+            <input type="password" className="form-control" id="password" name="password" placeholder="Ingresa tu contraseña" onChange={handleLogInput} required />
+          </div>
+          <div className="d-grid">
+            <button type="submit" onClick={() => { login(logUser) }} className="btn btn-primary">Iniciar Sesión</button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 
-export default Login;
+export default LoginPage;

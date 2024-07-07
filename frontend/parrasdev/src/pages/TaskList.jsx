@@ -1,11 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Modal, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import axios from 'axios';
+import styled from 'styled-components';
+
+const Container = styled.div`
+  max-width: 800px;
+  margin: auto;
+`;
+
+const Title = styled.h2`
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+`;
+
+const ListItem = styled.li`
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  padding: 10px;
+`;
+
+const TaskTitle = styled.div`
+  font-size: 18px;
+  color: #007bff;
+  font-weight: bold;
+`;
+
+const CustomModalHeader = styled(Modal.Header)`
+  background-color: #007bff;
+  color: white;
+`;
+
+const CustomModalFooter = styled(Modal.Footer)`
+  display: flex;
+  justify-content: flex-end;
+
+  button {
+    margin-left: 10px;
+
+    &:first-child {
+      margin-left: 0;
+    }
+  }
+`;
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
   const [activeTasks, setActiveTasks] = useState([]);
   const [completedTasks, setCompletedTasks] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentTask, setCurrentTask] = useState({});
@@ -16,25 +66,19 @@ const TaskList = () => {
 
   const fetchTasks = async () => {
     try {
-      const response = await fetch('URL');
-      const data = await response.json();
+      const response = await axios.get('http://localhost:8000/api/tasks/list');
+      const data = response.data;
       setTasks(data);
-      setActiveTasks(data.filter(task => task.status === 'activo'));
-      setCompletedTasks(data.filter(task => task.status === 'inactivo'));
+      setActiveTasks(data.filter(task => task["status"] === false));
+      setCompletedTasks(data.filter(task => task["status"] === true));
     } catch (error) {
-      console.error('Error fetching tasks:', error);
+      console.error('Error fetching tasks:', error.message);
     }
   };
 
   const handleAddTask = async (newTask) => {
     try {
-      await fetch('URL_DE_TU_API/tasks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newTask),
-      });
+      await axios.post('http://localhost:8000/api/tasks/create', newTask);
       fetchTasks();
       setShowAddModal(false);
     } catch (error) {
@@ -44,13 +88,7 @@ const TaskList = () => {
 
   const handleEditTask = async (editedTask) => {
     try {
-      await fetch(`URL_DE_TU_API/tasks/${editedTask.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editedTask),
-      });
+      await axios.put(`http://localhost:8000/api/tasks/update/${editedTask.id}`, editedTask);
       fetchTasks();
       setShowEditModal(false);
     } catch (error) {
@@ -58,23 +96,51 @@ const TaskList = () => {
     }
   };
 
+  const handleCompleteTask = async (taskId) => {
+    const task = tasks.find(task => task.id === taskId);
+    if (task) {
+      const completedTask = {
+        status: true,
+      };
+      try {
+        await axios.put(`http://localhost:8000/api/tasks/complete/${taskId}`, completedTask);
+        fetchTasks();
+      } catch (error) {
+        console.error('Error completing task:', error);
+      }
+    }
+  };
+
+  const filteredActiveTasks = activeTasks.filter(task =>
+    task.title && task.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredCompletedTasks = completedTasks.filter(task =>
+    task.title && task.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    /// este es la carta para las tasks que faltan por hacer, buscar por su nombre o id 
-    
-    <div className="container mt-5">
+    <Container className="mt-5">
       <div className="row">
         <div className="col">
-          <h2>Mis Tareas Activas</h2>
+          <Title>Mis Tareas Activas</Title>
           <Button variant="primary" className="mb-3" onClick={() => setShowAddModal(true)}>
             Agregar Nueva Tarea
           </Button>
+          <Form.Control
+            type="text"
+            placeholder="Buscar tareas..."
+            className="mb-3"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
           <ol className="list-group list-group-numbered">
-            {activeTasks.map(task => (
-              <li key={task.id} className="list-group-item d-flex justify-content-between align-items-start">
+            {filteredActiveTasks.map(task => (
+              <ListItem key={task.id} className="list-group-item">
                 <div className="ms-2 me-auto">
-                  <div className="fw-bold">{task.nombre}</div>
-                  <p>Descripción: {task.Descripcion}</p>
-                  <p>Fecha de finalización: {task.Fecha}</p>
+                  <TaskTitle>{task.title}</TaskTitle>
+                  <p>Descripción: {task.description}</p>
+                  <p>Fecha de finalización: {task.final_date}</p>
                 </div>
                 <div>
                   <Button
@@ -88,47 +154,53 @@ const TaskList = () => {
                   >
                     Editar
                   </Button>
-                  <Button variant="danger" size="sm">Marcar Completada</Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => handleCompleteTask(task.id)}
+                  >
+                    Marcar Completada
+                  </Button>
                 </div>
-              </li>
+              </ListItem>
             ))}
           </ol>
         </div>
       </div>
-      {/* //////////////////////////////////////////// */}
 
-      <div className="container mt-5">
+      <Container className="mt-5">
         <div className="row">
           <div className="col">
-            <h2>Mis Tareas Finalizadas</h2>
+            <Title>Mis Tareas Finalizadas</Title>
             <ol className="list-group list-group-numbered">
-              {completedTasks.map(task => (
-                <li key={task.id} className="list-group-item d-flex justify-content-between align-items-start">
+              {filteredCompletedTasks.map(task => (
+                <ListItem key={task.id} className="list-group-item">
                   <div className="ms-2 me-auto">
-                    <div className="fw-bold">{task.nombre}</div>
-                    <p>Descripción: {task.Descripcion}</p>
-                    <p>Fecha de finalización: {task.Fecha}</p>
+                    <TaskTitle>{task.title}</TaskTitle>
+                    <p>Descripción: {task.description}</p>
+                    <p>Fecha de finalización: {task.final_date}</p>
                   </div>
-                </li>
+                </ListItem>
               ))}
             </ol>
           </div>
         </div>
-      </div>
+      </Container>
 
       {/* Add Modal */}
       <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
-        <Modal.Header closeButton>
+        <CustomModalHeader closeButton>
           <Modal.Title>Agregar Nueva Tarea</Modal.Title>
-        </Modal.Header>
+        </CustomModalHeader>
         <Modal.Body>
           <Form onSubmit={(e) => {
             e.preventDefault();
             const newTask = {
-              nombre: e.target.newTaskInput.value,
-              Descripcion: e.target.newTaskDescription.value,
-              Fecha: e.target.newTaskDueDate.value,
-              status: 'activo',
+              title: e.target.newTaskInput.value,
+              description: e.target.newTaskDescription.value,
+              user: 1,
+              final_date: e.target.newTaskDueDate.value,
+              status: false,
             };
             handleAddTask(newTask);
           }}>
@@ -153,31 +225,32 @@ const TaskList = () => {
 
       {/* Edit Modal */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
-        <Modal.Header closeButton>
+        <CustomModalHeader closeButton>
           <Modal.Title>Editar Tarea</Modal.Title>
-        </Modal.Header>
+        </CustomModalHeader>
         <Modal.Body>
           <Form onSubmit={(e) => {
             e.preventDefault();
             const editedTask = {
               ...currentTask,
-              nombre: e.target.taskInput.value,
-              Descripcion: e.target.taskDescription.value,
-              Fecha: e.target.taskDueDate.value,
+              title: e.target.taskInput.value,
+              description: e.target.taskDescription.value,
+              final_date: e.target.taskDueDate.value,
+              status: false,
             };
             handleEditTask(editedTask);
           }}>
             <Form.Group className="mb-3">
               <Form.Label>Tarea</Form.Label>
-              <Form.Control type="text" id="taskInput" defaultValue={currentTask.nombre} required />
+              <Form.Control type="text" id="taskInput" defaultValue={currentTask.title} required />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Descripción</Form.Label>
-              <Form.Control as="textarea" id="taskDescription" rows={3} defaultValue={currentTask.Descripcion} required />
+              <Form.Control as="textarea" id="taskDescription" rows={3} defaultValue={currentTask.description} required />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Fecha de Finalización</Form.Label>
-              <Form.Control type="date" id="taskDueDate" defaultValue={currentTask.Fecha} required />
+              <Form.Control type="date" id="taskDueDate" defaultValue={currentTask.final_date} required />
             </Form.Group>
             <Button variant="primary" type="submit">
               Guardar cambios
@@ -185,7 +258,7 @@ const TaskList = () => {
           </Form>
         </Modal.Body>
       </Modal>
-    </div>
+    </Container>
   );
 };
 
